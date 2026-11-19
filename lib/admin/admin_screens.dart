@@ -550,69 +550,9 @@ class _ModulTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l = adminStore.moduls;
-    return PageBody(children: [
-      const TabTitle('Kelola Modul'),
-      Text('Kelola modul, materi, dan kuis pembelajaran.',
-          style: AppText.bodyText()),
-      const SizedBox(height: 16),
-      PrimaryButton('Tambah Modul',
-          trailing: Icons.add,
-          onTap: () => Navigator.of(context)
-              .push(MaterialPageRoute(builder: (_) => const ModulEditor()))),
-      const SizedBox(height: 16),
-      for (var i = 0; i < l.length; i++)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: OutlinedCard(
-            radius: 14,
-            onTap: () => Navigator.of(context)
-                .push(MaterialPageRoute(builder: (_) => ModulEditor(index: i))),
-            child: Row(children: [
-              Container(
-                width: 44,
-                height: 44,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                    shape: BoxShape.circle, color: AppColors.tint),
-                child: Text('${i + 1}',
-                    style: AppText.base(
-                        size: 18,
-                        weight: FontWeight.w700,
-                        color: AppColors.primary)),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(l[i].title,
-                          style:
-                              AppText.base(size: 16, weight: FontWeight.w700)),
-                      const SizedBox(height: 4),
-                      Text(
-                          '${l[i].materi.length} materi • ${l[i].quiz.length} soal',
-                          style: AppText.caption()),
-                    ]),
-              ),
-              _iconBtn(
-                  Icons.edit_outlined,
-                  () => Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => ModulEditor(index: i)))),
-              _iconBtn(Icons.delete_outline, () async {
-                if (await _confirm(
-                    context,
-                    'Hapus modul?',
-                    'Modul "${l[i].title}" beserta materi dan kuisnya akan dihapus.',
-                    'Ya, Hapus')) {
-                  adminStore.moduls.removeAt(i);
-                  adminStore.changed();
-                }
-              }, c: AppColors.error),
-            ]),
-          ),
-        ),
-    ]);
+    return const CloudModulesScreen(
+      isAdmin: true,
+    );
   }
 }
 
