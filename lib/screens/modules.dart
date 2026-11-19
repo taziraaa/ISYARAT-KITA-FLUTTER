@@ -113,7 +113,8 @@ class _ModuleCard extends StatelessWidget {
                   color: locked ? AppColors.field : AppColors.tint,
                 ),
                 child: done
-                    ? const Icon(Icons.check, size: 22, color: AppColors.primary)
+                    ? const Icon(Icons.check,
+                        size: 22, color: AppColors.primary)
                     : locked
                         ? const Icon(Icons.lock_outline,
                             size: 22, color: AppColors.ink)
@@ -192,10 +193,12 @@ Future<void> showLockedSheet(BuildContext context, int index) {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Icon(Icons.lock_outline, size: 28, color: AppColors.primary),
+                const Icon(Icons.lock_outline,
+                    size: 28, color: AppColors.primary),
                 InkResponse(
                   onTap: () => Navigator.pop(ctx),
-                  child: const Icon(Icons.close, size: 24, color: AppColors.ink),
+                  child:
+                      const Icon(Icons.close, size: 24, color: AppColors.ink),
                 ),
               ],
             ),

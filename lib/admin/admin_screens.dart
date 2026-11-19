@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import '../screens/cloud_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-
+import '../services/modul_detail_service.dart';
 import '../screens/login.dart';
 import '../theme.dart';
 import '../widgets.dart';
@@ -556,33 +556,129 @@ class _ModulTab extends StatelessWidget {
   }
 }
 
-/// Editor modul: tab Materi dan tab Kuis. Perubahan baru tersimpan saat "Simpan Perubahan".
+
 class ModulEditor extends StatefulWidget {
   final int? index;
-  const ModulEditor({super.key, this.index});
+  final String? modulId;
+
+  const ModulEditor({
+    super.key,
+    this.index,
+    this.modulId,
+  });
+
   @override
-  State<ModulEditor> createState() => _ModulEditorState();
+  State<ModulEditor> createState() =>
+      _ModulEditorState();
 }
 
 class _ModulEditorState extends State<ModulEditor> {
-  late final Modul d = widget.index == null
-      ? Modul('')
-      : adminStore.moduls[widget.index!].copy();
+  final ModulDetailService detailService =
+      ModulDetailService();
 
-  void _save() {
-    if (d.title.trim().isEmpty) {
-      _snack(context, 'Judul modul wajib diisi.');
-      return;
+  late Modul d;
+
+  bool _loading = false;
+  bool _saving = false;
+  String? _loadError;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Mode editor lokal lama
+    d = widget.index == null
+        ? Modul('')
+        : adminStore.moduls[widget.index!].copy();
+
+    // Mode editor online
+    if (widget.modulId != null) {
+      _loading = true;
+      _loadModulOnline();
     }
-    if (widget.index == null) {
-      adminStore.moduls.add(d);
-    } else {
-      adminStore.moduls[widget.index!] = d;
-    }
-    adminStore.changed();
-    Navigator.pop(context);
-    _snack(context, 'Perubahan disimpan.');
   }
+
+  Future<void> _loadModulOnline() async {
+    try {
+      final hasil = await detailService.ambilModul(
+        widget.modulId!,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        d = hasil;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _loadError = e.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  
+Future<void> _save() async {
+  if (_saving) return;
+
+  if (d.title.trim().isEmpty) {
+    _snack(context, 'Judul modul wajib diisi.');
+    return;
+  }
+
+  // Mode Firestore
+  if (widget.modulId != null) {
+    setState(() => _saving = true);
+
+    try {
+      await detailService.simpanModul(
+        widget.modulId!,
+        d,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Materi dan kuis berhasil disimpan.',
+          ),
+        ),
+      );
+
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal menyimpan: $e'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
+    return;
+  }
+
+  // Mode lokal lama tetap dipertahankan
+  if (widget.index == null) {
+    adminStore.moduls.add(d);
+  } else {
+    adminStore.moduls[widget.index!] = d;
+  }
+
+  adminStore.changed();
+
+  if (!mounted) return;
+  Navigator.pop(context);
+}
+
 
   Widget _materiCard(Materi m) => Padding(
         padding: const EdgeInsets.only(bottom: 14),
@@ -732,8 +828,22 @@ class _ModulEditorState extends State<ModulEditor> {
   }
 
   @override
-  Widget build(BuildContext context) => DefaultTabController(
-        length: 2,
+Widget build(BuildContext context) => _loading
+    ? const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      )
+    : _loadError != null
+        ? Scaffold(
+            appBar: AppBar(
+              title: const Text('Gagal memuat modul'),
+            ),
+            body: Center(
+              child: Text(_loadError!),
+            ),
+          )
+        : DefaultTabController(        length: 2,
         child: Scaffold(
           backgroundColor: Colors.white,
           body: SafeArea(

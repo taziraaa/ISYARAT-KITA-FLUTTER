@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import '../admin/admin_screens.dart';
 import '../services/migrasi_modul_service.dart';
 import '../services/modul_service.dart';
 
@@ -314,6 +314,15 @@ class _CloudModulesScreenState extends State<CloudModulesScreen> {
                         trailing: widget.isAdmin
                             ? PopupMenuButton<String>(
                                 onSelected: (value) {
+                                  if (value == 'content') {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => ModulEditor(
+                                        modulId: document.id,
+                                      ),
+                                    ),
+                                  );
+                                }
                                   if (value == 'edit') {
                                     bukaForm(
                                       id: document.id,
@@ -324,20 +333,20 @@ class _CloudModulesScreenState extends State<CloudModulesScreen> {
                                     hapusModul(document.id);
                                   }
                                 },
-                                itemBuilder: (context) => const [
-                                  PopupMenuItem(
-                                    value: 'edit',
-                                    child: Text(
-                                      'Edit Modul',
-                                    ),
-                                  ),
-                                  PopupMenuItem(
-                                    value: 'delete',
-                                    child: Text(
-                                      'Hapus Modul',
-                                    ),
-                                  ),
-                                ],
+                               itemBuilder: (context) => const [
+                                PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text('Edit Judul & Deskripsi'),
+                                ),
+                                PopupMenuItem(
+                                  value: 'content',
+                                  child: Text('Edit Materi & Kuis'),
+                                ),
+                                PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text('Hapus Modul'),
+                                ),
+                              ],
                               )
                             : null,
                       ),
