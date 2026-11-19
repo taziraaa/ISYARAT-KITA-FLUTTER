@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-
+import '../screens/cloud_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -312,6 +312,20 @@ class _Dashboard extends StatelessWidget {
           ]),
           const SizedBox(height: 22),
           Text('Menu utama', style: AppText.section()),
+          const SizedBox(height: 14),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.cloud_outlined),
+            label: const Text('Kelola Modul Online'),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const CloudModulesScreen(
+                    isAdmin: true,
+                  ),
+                ),
+              );
+            },
+          ),
           const SizedBox(height: 14),
           _menu(Icons.photo_library_outlined, 'Kelola Asset',
               'Gambar gestur untuk halaman Kamus', 1),

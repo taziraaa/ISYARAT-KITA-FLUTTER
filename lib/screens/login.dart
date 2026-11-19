@@ -1,14 +1,10 @@
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../admin/admin_data.dart';
-import '../admin/admin_screens.dart';
-import '../main.dart';
+import '../cloud_auth_gate.dart';
 import '../theme.dart';
 import '../widgets.dart';
-
-// Demo credentials – replace with real auth.
-const _demoEmail = 'andi@email.com';
-const _demoPassword = 'bisindo123';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,8 +16,10 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
+
   bool _obscure = true;
   bool _error = false;
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -30,22 +28,54 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _submit() {
-    // Akun admin masuk ke Dashboard Admin (alur user di bawah tidak berubah).
-    if (_email.text.trim().toLowerCase() == adminEmail &&
-        _password.text == adminPassword) {
-      Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const AdminShell()));
+  Future<void> _submit() async {
+    if (_loading) return;
+
+    final email = _email.text.trim();
+    final password = _password.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _error = true);
       return;
     }
-    final ok = _email.text.trim().toLowerCase() == _demoEmail &&
-        _password.text == _demoPassword;
-    if (ok) {
-      setState(() => _error = false);
-      Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MainShell()));
-    } else {
+
+    setState(() {
+      _loading = true;
+      _error = false;
+    });
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (!mounted) return;
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => const CloudAuthGate(),
+        ),
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
       setState(() => _error = true);
+
+      debugPrint('Firebase login error: ${e.code}');
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Terjadi kesalahan: $e'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -60,14 +90,24 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const LogoLockup(),
                 const SizedBox(height: 56),
-                Text('Selamat datang!',
-                    style: AppText.base(size: 30, weight: FontWeight.w700)),
+
+                Text(
+                  'Selamat datang!',
+                  style: AppText.base(
+                    size: 30,
+                    weight: FontWeight.w700,
+                  ),
+                ),
+
                 const SizedBox(height: 14),
+
                 Text(
                   'Langkah kecil untuk saling mengerti. Masuk untuk melanjutkan belajar BISINDO.',
                   style: AppText.bodyText(size: 16),
                 ),
+
                 const SizedBox(height: 28),
+
                 if (_error) ...[
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -78,14 +118,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.error_outline,
-                            size: 22, color: AppColors.error),
+                        const Icon(
+                          Icons.error_outline,
+                          size: 22,
+                          color: AppColors.error,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             'Email atau kata sandi salah. Periksa kembali dan coba lagi.',
                             style: AppText.base(
-                                size: 14, color: AppColors.error, height: 1.45),
+                              size: 14,
+                              color: AppColors.error,
+                              height: 1.45,
+                            ),
                           ),
                         ),
                       ],
@@ -93,6 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 22),
                 ],
+
                 AppField(
                   label: 'Alamat email',
                   hint: 'Masukkan alamat email',
@@ -100,7 +147,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   error: _error,
                   keyboardType: TextInputType.emailAddress,
                 ),
+
                 const SizedBox(height: 22),
+
                 AppField(
                   label: 'Kata sandi',
                   hint: 'Masukkan kata sandi',
@@ -108,47 +157,82 @@ class _LoginScreenState extends State<LoginScreen> {
                   error: _error,
                   obscure: _obscure,
                   suffix: IconButton(
-                    onPressed: () => setState(() => _obscure = !_obscure),
+                    onPressed: () {
+                      setState(() => _obscure = !_obscure);
+                    },
                     icon: Icon(
-                        _obscure
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                        color: AppColors.body),
+                      _obscure
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      color: AppColors.body,
+                    ),
                   ),
                 ),
+
                 const SizedBox(height: 22),
+
                 Align(
                   alignment: Alignment.centerRight,
                   child: GestureDetector(
                     onTap: () {},
-                    child: Text('Lupa kata sandi?', style: AppText.link(size: 14)),
+                    child: Text(
+                      'Lupa kata sandi?',
+                      style: AppText.link(size: 14),
+                    ),
                   ),
                 ),
+
                 const SizedBox(height: 14),
-                PrimaryButton('Masuk Sekarang',
-                    trailing: Icons.arrow_forward, onTap: _submit),
+
+                PrimaryButton(
+                  _loading ? 'Sedang masuk...' : 'Masuk Sekarang',
+                  trailing: Icons.arrow_forward,
+                  onTap: _loading ? null : _submit,
+                ),
+
                 const SizedBox(height: 22),
+
                 Center(
-                  child: Text.rich(TextSpan(children: [
+                  child: Text.rich(
                     TextSpan(
-                        text: 'Belum punya akun? ',
-                        style: AppText.base(size: 15, color: AppColors.body)),
-                    TextSpan(
-                        text: 'Daftar Gratis',
-                        style: AppText.base(
+                      children: [
+                        TextSpan(
+                          text: 'Belum punya akun? ',
+                          style: AppText.base(
+                            size: 15,
+                            color: AppColors.body,
+                          ),
+                        ),
+                        TextSpan(
+                          text: 'Daftar Gratis',
+                          style: AppText.base(
                             size: 15,
                             weight: FontWeight.w700,
-                            color: AppColors.primary)),
-                  ])),
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
+
                 const SizedBox(height: 40),
+
                 Row(
                   children: [
-                    const Icon(Icons.verified_user_outlined,
-                        size: 18, color: AppColors.primary),
+                    const Icon(
+                      Icons.verified_user_outlined,
+                      size: 18,
+                      color: AppColors.primary,
+                    ),
                     const SizedBox(width: 8),
-                    Text('Progres belajarmu tersimpan di akunmu.',
-                        style: AppText.base(size: 13, color: AppColors.body)),
+                    Text(
+                      'Progres belajarmu tersimpan di akunmu.',
+                      style: AppText.base(
+                        size: 13,
+                        color: AppColors.body,
+                      ),
+                    ),
                   ],
                 ),
               ],

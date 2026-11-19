@@ -1,26 +1,34 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
+import 'cloud_auth_gate.dart';
 import 'data.dart';
 import 'screens/dictionary.dart';
 import 'screens/home.dart';
-import 'screens/login.dart';
 import 'screens/modules.dart';
 import 'screens/profile.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-    systemNavigationBarColor: Colors.white,
-    systemNavigationBarIconBrightness: Brightness.dark,
-  ));
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.white,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ),
+  );
+
   runApp(const IsyaratKitaApp());
 }
-
 class IsyaratKitaApp extends StatefulWidget {
   const IsyaratKitaApp({super.key});
 
@@ -38,7 +46,7 @@ class _IsyaratKitaAppState extends State<IsyaratKitaApp> {
           title: 'IsyaratKita',
           debugShowCheckedModeBanner: false,
           theme: buildTheme(),
-          home: const LoginScreen(),
+          home: const CloudAuthGate(),
         ),
       );
 }

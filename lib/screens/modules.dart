@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'cloud_modules.dart';
 import '../data.dart';
 import '../theme.dart';
 import '../widgets.dart';
@@ -26,6 +26,20 @@ class ModulesScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
       children: [
         const TabTitle('Modul Pembelajaran'),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          icon: const Icon(Icons.cloud_outlined),
+          label: const Text('Lihat Modul Online'),
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const CloudModulesScreen(
+                  isAdmin: false,
+                ),
+              ),
+            );
+          },
+        ),
         const SizedBox(height: 4),
         Text(
           s.allDone
